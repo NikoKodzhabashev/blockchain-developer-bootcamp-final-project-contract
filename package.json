@@ -22,5 +22,8 @@
   "homepage": "https://github.com/NikoKodzhabashev/happy-faces#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^4.4.1"
+  },
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.15"
   }
 }
