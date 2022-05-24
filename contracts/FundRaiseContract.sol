@@ -132,26 +132,19 @@ contract FundRaiseContract {
         return campaignsByAddress;
     }
 
-    function getAllCampaigns(uint256 _resultsPerPage, uint256 _page)
+    function getAllCampaigns()
         external
         view
         returns (Campaign[] memory)
     {
-        uint256 _returnCounter = 0;
-
-        Campaign[] memory _campaigns = new Campaign[](_resultsPerPage);
-
-        for (
-            uint256 i = _resultsPerPage * _page - _resultsPerPage;
-            i < _resultsPerPage * _page;
-            i++
-        ) {
-            if (i < _campaigns.length - 1) {
-                _campaigns[_returnCounter] = campaigns[_resultsPerPage + i];
-            }
-            _returnCounter++;
+        uint itemCount = campaignId;
+        Campaign[] memory campaignList = new Campaign[](itemCount);
+        
+        for (uint i = 0; i < itemCount; i++) {
+            Campaign memory currentCandidate = campaigns[i];
+            campaignList[i] = currentCandidate;
         }
 
-        return _campaigns;
+        return campaignList;
     }
 }
