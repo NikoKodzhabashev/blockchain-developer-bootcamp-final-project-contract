@@ -4,18 +4,13 @@ const {
   expectRevert,
   expectEvent,
 } = require("@openzeppelin/test-helpers");
-const { web3 } = require("@openzeppelin/test-helpers/src/setup");
+const { deployProxy } = require("@openzeppelin/truffle-upgrades");
 
-async function getTransactionGasCost(tx) {
-  let transactionReceipt = await web3.eth.getTransactionReceipt(tx);
-  let transaction = await web3.eth.getTransaction(tx);
-  return web3.utils.toBN(
-    parseInt(transaction.gasPrice) * parseInt(transactionReceipt.gasUsed)
-  );
-}
+async function createFreshCampaign(fundRaiseContract, account, weeksToAdd = 1) {
+  const latestTimeBlock = await time.latest();
+  const additionalWeek = await time.duration.weeks(weeksToAdd);
 
-async function createFreshCampaign(fundRaiseContract, account) {
-  const expireOf = time.duration.weeks(1);
+  const expireOf = parseInt(latestTimeBlock) + parseInt(additionalWeek);
   const goal = 10;
   const title = "Test title";
   const description = "Test description";
@@ -47,15 +42,16 @@ contract("FundRaiseContract", function (accounts) {
   const campaignId = 0;
 
   beforeEach(async () => {
-    fundRaiseContract = await FundRaiseContract.new();
+    fundRaiseContract = await deployProxy(FundRaiseContract, [], {
+      initializer: "initialize()",
+    });
   });
 
   describe("createCampaign", () => {
     it("should create a new campaign", async () => {
-      const { goal, expireOf, title, description, ipfsHash } =
+      const { goal, title, expireOf, description, ipfsHash } =
         await createFreshCampaign(fundRaiseContract, fundraiser);
 
-      const blockTimestamp = await time.latest();
       const campaign = await fundRaiseContract.campaigns(0);
 
       assert.equal(parseInt(campaign.id.toString()), 0, "Mismatch id");
@@ -67,7 +63,7 @@ contract("FundRaiseContract", function (accounts) {
       );
       assert.equal(
         parseInt(campaign.expireOf.toString()),
-        parseInt(blockTimestamp.toString()) + parseInt(expireOf.toString()),
+        parseInt(expireOf.toString()),
         "Mismatch expireOf"
       );
       assert.equal(campaign.description, description, "Mismatch description");
@@ -84,7 +80,11 @@ contract("FundRaiseContract", function (accounts) {
 
   describe("donate", () => {
     it("should increase the campaign balance on donate when the campaign is active", async () => {
-      await createFreshCampaign(fundRaiseContract, fundraiser);
+      const { expireOf } = await createFreshCampaign(
+        fundRaiseContract,
+        fundraiser
+      );
+
       await fundRaiseContract.donate(campaignId, {
         from: donator,
         value: donation,
@@ -98,62 +98,22 @@ contract("FundRaiseContract", function (accounts) {
         "Current amount not equal to the donation"
       );
     });
-    it("should complete the campaign when donate to expired campaign", async () => {
-      await createFreshCampaign(fundRaiseContract, fundraiser);
-
-      const campaign = await fundRaiseContract.campaigns(campaignId);
-
-      await time.increase(time.duration.weeks(2));
-      await fundRaiseContract.donate(campaignId, {
-        from: donator,
-        value: donation,
-      });
-
-      const updatedCampaign = await fundRaiseContract.campaigns(campaignId);
-
-      assert.equal(
-        parseInt(updatedCampaign.status.toString()),
-        FundRaiseContract.FundRaiseStatus.Completed,
-        "Wrong status"
-      );
-      assert.equal(
-        parseInt(updatedCampaign.currentAmount.toString()),
-        parseInt(campaign.currentAmount.toString()),
-        "Amount should not be changed"
-      );
-    });
   });
 
   describe("withdraw", () => {
-    it("should allow the campaign creator to withdraw the money and complete the campaign when it is active", async () => {
-      await createFreshCampaign(fundRaiseContract, fundraiser);
-      await fundRaiseContract.donate(campaignId, {
-        from: donator,
-        value: donation,
-      });
-
-      const fundraiserBalanceBeforeWithdraw = await web3.eth.getBalance(
+    it("should allow the campaign creator to withdraw the money and complete the campaign when it is inactive", async () => {
+      const { expireOf } = await createFreshCampaign(
+        fundRaiseContract,
         fundraiser
       );
+      await time.increase(time.duration.weeks(2));
 
       const receipt = await fundRaiseContract.withdraw(campaignId, {
         from: fundraiser,
       });
-      const gasCost = await getTransactionGasCost(receipt.tx);
-
-      const fundraiserBalanceAfterWithdraw = await web3.eth.getBalance(
-        fundraiser
-      );
 
       const updatedCampaign = await fundRaiseContract.campaigns(campaignId);
 
-      assert.equal(
-        parseInt(fundraiserBalanceAfterWithdraw),
-        parseInt(fundraiserBalanceBeforeWithdraw) +
-          donation -
-          parseInt(gasCost.toString()),
-        "Wrong ballance after withdraw"
-      );
       assert.equal(
         parseInt(updatedCampaign.status.toString()),
         FundRaiseContract.FundRaiseStatus.Completed
@@ -179,22 +139,18 @@ contract("FundRaiseContract", function (accounts) {
     });
   });
 
-  it.only("it should return all campaigns of an address", async () => {
+  it("it should return all campaigns of an address", async () => {
     const { goal, expireOf, title, description, ipfsHash } =
       await createFreshCampaign(fundRaiseContract, fundraiser);
     const fundraiserCampaigns =
       await fundRaiseContract.getAllCampaignsByAddress();
-    const latestTime = await time.latest();
 
-    const calculatedExpireOf = (
-      parseInt(expireOf.toString()) + parseInt(latestTime.toString())
-    ).toString();
     expect(fundraiserCampaigns).to.deep.equal([
       [
         "0",
         goal.toString(),
         "0",
-        calculatedExpireOf,
+        expireOf.toString(),
         description,
         title,
         ipfsHash,
@@ -202,6 +158,4 @@ contract("FundRaiseContract", function (accounts) {
       ],
     ]);
   });
-
-  it("it should return paginated campaigns", () => {});
 });

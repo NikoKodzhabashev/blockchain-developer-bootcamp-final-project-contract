@@ -1,0 +1,177 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0xA90f7B7fde84682989Bd78cFd02C4E938C4182b3",
+    "txHash": "0x44965b89d80df6e3c15bcfced5c58bf631732bf0a926f8f7403b81276dabd05b"
+  },
+  "proxies": [
+    {
+      "address": "0xAd161Cfe4ff86EF2d06A1030087023D974F43103",
+      "txHash": "0x26cd4f279540ce91e84e6a66f7dd9b9f7e2674fa2c5c5630edf1e9bfeef2e46c",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x6bb504EBAB9607476A1062b017ce04ec39C42a2D",
+      "txHash": "0x80bff59b82e120cf5b02961cc573105aea20d79e487170e9aa9e218d5aa74b9f",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xca53d0832be88E5BD3e6FaFd75aCD207194F6F10",
+      "txHash": "0x9fe7f327d520294e27113089adaa89f1ea24be7b996c20c6b71ddbb263b146c8",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x4A6658AfaD390996FcA7a76e32E7f6D49ea32e14",
+      "txHash": "0x7d1e680e5c3fb97ba8fc267fa7a0e3b6239bec57b2ce876d95a3e7f9629bd49f",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x4A6717D421ABCC6F987385db5E189f0EA0327C6a",
+      "txHash": "0x42b0322e55d3e06c65c0dab454ff389fb692afc4184a23c4a73b33f40d0bf74d",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x4501fFb835efAB69B389001A12C185208ff5D07C",
+      "txHash": "0x37f6d3bcd8a2707be11c7aa597b2bd764a16a49f451582b782f7fa19512e7dee",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "f14db4b321544f5d6490cad9a68b2b507e7b0ca90b4052f72e53d52a4254d61c": {
+      "address": "0xb0eD3fEc1015A2F8504F611214A745833649c639",
+      "txHash": "0x3c84c8d0f19a3306cc8f17d1acd2727cb6f6457ddd0058bd5f1c428a1eeaa9da",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_uint8",
+            "src": "../@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "../@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "contract": "FundRaiseContract",
+            "label": "campaignId",
+            "type": "t_uint256",
+            "src": "../project:/contracts/FundRaiseContract.sol:8"
+          },
+          {
+            "contract": "FundRaiseContract",
+            "label": "userId",
+            "type": "t_uint256",
+            "src": "../project:/contracts/FundRaiseContract.sol:9"
+          },
+          {
+            "contract": "FundRaiseContract",
+            "label": "fundRaisers",
+            "type": "t_mapping(t_address,t_struct(FundRaiser)406_storage)",
+            "src": "../project:/contracts/FundRaiseContract.sol:22"
+          },
+          {
+            "contract": "FundRaiseContract",
+            "label": "campaigns",
+            "type": "t_mapping(t_uint256,t_struct(Campaign)429_storage)",
+            "src": "../project:/contracts/FundRaiseContract.sol:34"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_address,t_struct(FundRaiser)406_storage)": {
+            "label": "mapping(address => struct FundRaiseContract.FundRaiser)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_struct(FundRaiser)406_storage": {
+            "label": "struct FundRaiseContract.FundRaiser",
+            "members": [
+              {
+                "label": "userAddress",
+                "type": "t_address"
+              },
+              {
+                "label": "id",
+                "type": "t_uint256"
+              },
+              {
+                "label": "campaignIds",
+                "type": "t_array(t_uint256)dyn_storage"
+              },
+              {
+                "label": "isRegistered",
+                "type": "t_bool"
+              }
+            ]
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_mapping(t_uint256,t_struct(Campaign)429_storage)": {
+            "label": "mapping(uint256 => struct FundRaiseContract.Campaign)"
+          },
+          "t_struct(Campaign)429_storage": {
+            "label": "struct FundRaiseContract.Campaign",
+            "members": [
+              {
+                "label": "id",
+                "type": "t_uint256"
+              },
+              {
+                "label": "goal",
+                "type": "t_uint256"
+              },
+              {
+                "label": "currentAmount",
+                "type": "t_uint256"
+              },
+              {
+                "label": "expireOf",
+                "type": "t_uint256"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage"
+              },
+              {
+                "label": "title",
+                "type": "t_string_storage"
+              },
+              {
+                "label": "ipfsHash",
+                "type": "t_string_storage"
+              },
+              {
+                "label": "status",
+                "type": "t_enum(FundRaiseStatus)396"
+              }
+            ]
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_enum(FundRaiseStatus)396": {
+            "label": "enum FundRaiseContract.FundRaiseStatus",
+            "members": [
+              "Active",
+              "Completed"
+            ]
+          },
+          "t_uint8": {
+            "label": "uint8"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
-contract FundRaiseContract {
-    uint256 public campaignId = 0;
-    uint256 private userId = 0;
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+
+contract FundRaiseContract is Initializable, OwnableUpgradeable {
+    uint256 public campaignId;
+    uint256 private userId;
 
     enum FundRaiseStatus {
         Active,
@@ -36,12 +40,17 @@ contract FundRaiseContract {
         uint256 campaignId,
         uint256 amount
     );
-    event FundRaiseDonateRejected(address indexed donator, string message);
     event FundRaiseWithdraw(
         address indexed owner,
         uint256 campaignId,
         uint256 amount
     );
+
+    function initialize() public virtual initializer {
+        campaignId = 0;
+        userId = 0;
+        __Ownable_init();
+    }
 
     function createCampaign(
         uint256 expireOf,
@@ -54,7 +63,7 @@ contract FundRaiseContract {
             campaignId,
             goal,
             0,
-            expireOf + block.timestamp,
+            expireOf,
             description,
             title,
             ipfsHash,
@@ -80,17 +89,13 @@ contract FundRaiseContract {
     }
 
     function donate(uint256 _campaignId) public payable {
-        if (block.timestamp > campaigns[_campaignId].expireOf) {
-            campaigns[_campaignId].expireOf = 0;
-            campaigns[_campaignId].status = FundRaiseStatus.Completed;
-            emit FundRaiseDonateRejected(
-                msg.sender,
-                "You cant donate to finished campaigns."
-            );
-        } else {
-            campaigns[_campaignId].currentAmount += msg.value;
-            emit FundRaiseDonate(msg.sender, _campaignId, msg.value);
-        }
+        require(
+            block.timestamp < campaigns[_campaignId].expireOf,
+            "You cant donate to finished campaigns."
+        );
+        
+        campaigns[_campaignId].currentAmount += msg.value;
+        emit FundRaiseDonate(msg.sender, _campaignId, msg.value);
     }
 
     function withdraw(uint256 _campaignId) public payable {
