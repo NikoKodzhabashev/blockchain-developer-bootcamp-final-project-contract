@@ -1,23 +1,39 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity 0.8.4;
 
-contract FundRaiseContract {
-    uint256 public campaignId = 0;
-    uint256 private userId = 0;
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+
+/// @title A POC for a fund raising contract
+/// @author Niko Kodzhabahev
+/// @notice You can use this contract for only the most basic functions as create, donate and withdraw funds.
+/// @custom:experimental This is an experimental contract.
+contract FundRaiseContract is Initializable, OwnableUpgradeable {
+    // Tracks the number of created campaigns
+    uint256 public campaignId;
+    // Tracks the number of created users
+    uint256 private userId;
+
+    // Stores the statuses of the campaigns
     enum FundRaiseStatus {
         Active,
         Completed
     }
 
+    // Structure of the fund raiser
     struct FundRaiser {
         address userAddress;
         uint256 id;
         uint256[] campaignIds;
         bool isRegistered;
     }
+
+    // Stores the fund raisers
     mapping(address => FundRaiser) public fundRaisers;
 
+    // Structure of the campaign
+    // This timestamp is used to calculate whether the campaign is active or not
     struct Campaign {
         uint256 id;
         uint256 goal;
@@ -28,21 +44,47 @@ contract FundRaiseContract {
         string ipfsHash;
         FundRaiseStatus status;
     }
+
+    // Stores the campaigns
     mapping(uint256 => Campaign) public campaigns;
 
+    /// @notice Logs the creation of a new campaign
+    /// @param owner the owner of the campaign
+    /// @param campaignId the id of the campaign
     event FundRaiseCreate(address indexed owner, uint256 campaignId);
+
+    /// @notice Logs the donation of a new campaign
+    /// @param donator the address of the user who donated
+    /// @param campaignId the id of the campaign
+    /// @param amount the amount of tokens donated
     event FundRaiseDonate(
         address indexed donator,
         uint256 campaignId,
         uint256 amount
     );
-    event FundRaiseDonateRejected(address indexed donator, string message);
+
+    /// @notice Logs the withdrawal of a new campaign
+    /// @param owner the address of the user who withdrew
+    /// @param campaignId the id of the campaign
+    /// @param amount the amount of tokens withdrawn
     event FundRaiseWithdraw(
         address indexed owner,
         uint256 campaignId,
         uint256 amount
     );
 
+    function initialize() public virtual initializer {
+        campaignId = 0;
+        userId = 0;
+        __Ownable_init();
+    }
+
+    /// @notice Creates a new campaign
+    /// @param expireOf the expiration of the campaign
+    /// @param goal the goal of the campaign
+    /// @param title the title of the campaign
+    /// @param description the description of the campaign
+    /// @param ipfsHash the ipfs hash of the campaign
     function createCampaign(
         uint256 expireOf,
         uint256 goal,
@@ -54,7 +96,7 @@ contract FundRaiseContract {
             campaignId,
             goal,
             0,
-            expireOf + block.timestamp,
+            expireOf,
             description,
             title,
             ipfsHash,
@@ -79,20 +121,20 @@ contract FundRaiseContract {
         emit FundRaiseCreate(msg.sender, campaignId);
     }
 
+    /// @notice Donates to a campaign
+    /// @param campaignId the id of the campaign
     function donate(uint256 _campaignId) public payable {
-        if (block.timestamp > campaigns[_campaignId].expireOf) {
-            campaigns[_campaignId].expireOf = 0;
-            campaigns[_campaignId].status = FundRaiseStatus.Completed;
-            emit FundRaiseDonateRejected(
-                msg.sender,
-                "You cant donate to finished campaigns."
-            );
-        } else {
-            campaigns[_campaignId].currentAmount += msg.value;
-            emit FundRaiseDonate(msg.sender, _campaignId, msg.value);
-        }
+        require(
+            block.timestamp < campaigns[_campaignId].expireOf,
+            "You cant donate to finished campaigns."
+        );
+        
+        campaigns[_campaignId].currentAmount += msg.value;
+        emit FundRaiseDonate(msg.sender, _campaignId, msg.value);
     }
 
+    /// @notice Withdraws funds from a campaign
+    /// @param campaignId the id of the campaign
     function withdraw(uint256 _campaignId) public payable {
         require(
             msg.sender == fundRaisers[msg.sender].userAddress,
@@ -115,6 +157,7 @@ contract FundRaiseContract {
         emit FundRaiseWithdraw(msg.sender, _campaignId, accumulatedAmount);
     }
 
+    /// @notice Returns all camapaigns of the user
     function getAllCampaignsByAddress()
         external
         view
@@ -132,26 +175,20 @@ contract FundRaiseContract {
         return campaignsByAddress;
     }
 
-    function getAllCampaigns(uint256 _resultsPerPage, uint256 _page)
+    /// @notice Returns all campaigns
+    function getAllCampaigns()
         external
         view
         returns (Campaign[] memory)
     {
-        uint256 _returnCounter = 0;
-
-        Campaign[] memory _campaigns = new Campaign[](_resultsPerPage);
-
-        for (
-            uint256 i = _resultsPerPage * _page - _resultsPerPage;
-            i < _resultsPerPage * _page;
-            i++
-        ) {
-            if (i < _campaigns.length - 1) {
-                _campaigns[_returnCounter] = campaigns[_resultsPerPage + i];
-            }
-            _returnCounter++;
+        uint itemCount = campaignId;
+        Campaign[] memory campaignList = new Campaign[](itemCount);
+        
+        for (uint i = 0; i < itemCount; i++) {
+            Campaign memory currentCandidate = campaigns[i];
+            campaignList[i] = currentCandidate;
         }
 
-        return _campaigns;
+        return campaignList;
     }
 }
