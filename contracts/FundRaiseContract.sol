@@ -1,27 +1,39 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 
+/// @title A POC for a fund raising contract
+/// @author Niko Kodzhabahev
+/// @notice You can use this contract for only the most basic functions as create, donate and withdraw funds.
+/// @custom:experimental This is an experimental contract.
 contract FundRaiseContract is Initializable, OwnableUpgradeable {
+    // Tracks the number of created campaigns
     uint256 public campaignId;
+    // Tracks the number of created users
     uint256 private userId;
 
+    // Stores the statuses of the campaigns
     enum FundRaiseStatus {
         Active,
         Completed
     }
 
+    // Structure of the fund raiser
     struct FundRaiser {
         address userAddress;
         uint256 id;
         uint256[] campaignIds;
         bool isRegistered;
     }
+
+    // Stores the fund raisers
     mapping(address => FundRaiser) public fundRaisers;
 
+    // Structure of the campaign
+    // This timestamp is used to calculate whether the campaign is active or not
     struct Campaign {
         uint256 id;
         uint256 goal;
@@ -32,14 +44,29 @@ contract FundRaiseContract is Initializable, OwnableUpgradeable {
         string ipfsHash;
         FundRaiseStatus status;
     }
+
+    // Stores the campaigns
     mapping(uint256 => Campaign) public campaigns;
 
+    /// @notice Logs the creation of a new campaign
+    /// @param owner the owner of the campaign
+    /// @param campaignId the id of the campaign
     event FundRaiseCreate(address indexed owner, uint256 campaignId);
+
+    /// @notice Logs the donation of a new campaign
+    /// @param donator the address of the user who donated
+    /// @param campaignId the id of the campaign
+    /// @param amount the amount of tokens donated
     event FundRaiseDonate(
         address indexed donator,
         uint256 campaignId,
         uint256 amount
     );
+
+    /// @notice Logs the withdrawal of a new campaign
+    /// @param owner the address of the user who withdrew
+    /// @param campaignId the id of the campaign
+    /// @param amount the amount of tokens withdrawn
     event FundRaiseWithdraw(
         address indexed owner,
         uint256 campaignId,
@@ -52,6 +79,12 @@ contract FundRaiseContract is Initializable, OwnableUpgradeable {
         __Ownable_init();
     }
 
+    /// @notice Creates a new campaign
+    /// @param expireOf the expiration of the campaign
+    /// @param goal the goal of the campaign
+    /// @param title the title of the campaign
+    /// @param description the description of the campaign
+    /// @param ipfsHash the ipfs hash of the campaign
     function createCampaign(
         uint256 expireOf,
         uint256 goal,
@@ -88,6 +121,8 @@ contract FundRaiseContract is Initializable, OwnableUpgradeable {
         emit FundRaiseCreate(msg.sender, campaignId);
     }
 
+    /// @notice Donates to a campaign
+    /// @param campaignId the id of the campaign
     function donate(uint256 _campaignId) public payable {
         require(
             block.timestamp < campaigns[_campaignId].expireOf,
@@ -98,6 +133,8 @@ contract FundRaiseContract is Initializable, OwnableUpgradeable {
         emit FundRaiseDonate(msg.sender, _campaignId, msg.value);
     }
 
+    /// @notice Withdraws funds from a campaign
+    /// @param campaignId the id of the campaign
     function withdraw(uint256 _campaignId) public payable {
         require(
             msg.sender == fundRaisers[msg.sender].userAddress,
@@ -120,6 +157,7 @@ contract FundRaiseContract is Initializable, OwnableUpgradeable {
         emit FundRaiseWithdraw(msg.sender, _campaignId, accumulatedAmount);
     }
 
+    /// @notice Returns all camapaigns of the user
     function getAllCampaignsByAddress()
         external
         view
@@ -137,6 +175,7 @@ contract FundRaiseContract is Initializable, OwnableUpgradeable {
         return campaignsByAddress;
     }
 
+    /// @notice Returns all campaigns
     function getAllCampaigns()
         external
         view
